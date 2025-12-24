@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The AI Jedi Terminal - By Ordinary AI Jedi</title>
+    <style>
+        /* --- 1. GLOBAL & RESET STYLES (Bloomberg Theme) --- */
+        body {
+            font-family: 'Consolas', 'Courier New', monospace; /* Monospace font is key */
+            background-color: #000000; /* Black background */
+            color: #ffffff; /* Default white text */
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+        a {
+            color: #00ccff; /* Bright blue for links */
+            text-decoration: none;
+        }
+        
+        /* --- 2. GRID LAYOUT FOR TERMINAL FEEL --- */
+        .terminal-grid {
+            display: grid;
+            /* Define 4 columns: Title Bar, Left Panel, Center Panel, Right Panel */
+            grid-template-columns: 20px 1.5fr 2fr 1fr; 
+            grid-template-rows: auto 1fr; /* Two rows: Header and Content */
+            height: 100vh;
+            gap: 1px; /* Small gap to simulate panel borders */
+            background-color: #333; /* Dark border color */
+        }
+
+        /* --- 3. HEADER / TITLE BAR --- */
+        header {
+            grid-column: 1 / -1; /* Spans all columns */
+            background-color: #3d3d3d; /* Darker gray header */
+            padding: 8px 15px;
+            font-size: 14px;
+            border-bottom: 2px solid #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h1 {
+            font-size: 16px;
+            margin: 0;
+            color: #fff;
+            font-weight: normal;
+        }
+        .header-tabs {
+            display: flex;
+        }
+        .header-tabs div {
+            padding: 5px 15px;
+            cursor: pointer;
+            background-color: #2b2b2b;
+            margin-left: 5px;
+            border-radius: 4px 4px 0 0;
+            color: #ccc;
+        }
+        .header-tabs .active-tab {
+            background-color: #000000;
+            color: #ffff00; /* Yellow active tab text */
+            font-weight: bold;
+        }
+        
+        /* --- 4. PANEL STYLING (The main content areas) --- */
+        .panel {
+            background-color: #000000;
+            padding: 10px;
+            overflow-y: auto;
+            border: 1px solid #1a1a1a;
+        }
+        
+        /* --- LEFT PANEL: Company Data & Key Indicators --- */
+        #left-panel {
+            grid-column: 2 / 3; /* Second column */
+            background-color: #000;
+            font-size: 12px;
+        }
+        .panel h2 {
+            font-size: 14px;
+            margin: 5px 0 10px 0;
+            padding-bottom: 3px;
+            border-bottom: 1px dashed #333;
+            color: #fff;
+            font-weight: normal;
+        }
+        
+        /* Placeholder styling */
+        .placeholder-box {
+            background-color: #111;
+            border: 1px dashed #333;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 15px;
+            color: #999;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+
+        /* --- CENTER PANEL: RSS Ticker/News & TradingView --- */
+        #center-panel {
+            grid-column: 3 / 4; /* Third column */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* To control the Ticker Tape */
+        }
+        
+        /* Repurpose/Retain RSS Feed Styling */
+        #rss-feed {
+            height: 30px;
+            flex-shrink: 0;
+            border: none;
+            border-bottom: 1px solid #333;
+            background-color: #111;
+        }
+        #rss-feed h2 {
+            background-color: #333;
+            color: #ffff00;
+            font-size: 12px;
+            padding: 3px 10px;
+        }
+        #feed-content {
+            display: flex; /* Ensures horizontal layout */
+            white-space: nowrap; /* Ensures text stays on one line */
+            animation: scroll-left 60s linear infinite; /* Faster scroll */
+            padding-left: 100%;
+        }
+        #feed-content:hover {
+            animation-play-state: paused;
+        }
+        .news-item { 
+            display: inline-block; /* Essential for horizontal flow inside flex container */
+            padding: 0 30px; 
+        }
+        .news-title a { color: #00ccff; }
+        .news-separator { color: #ffff00; }
+        .loading, .error { padding: 5px 20px; }
+        
+        /* TradingView Ticker Tape Container (Should span the width of the panel) */
+        .tradingview-widget-container {
+            flex-grow: 1;
+            min-height: 200px; /* Ensure space for the chart/widget */
+        }
+        
+        /* --- RIGHT PANEL: Weather Widget (relocated) & Placeholder --- */
+        #right-panel {
+            grid-column: 4 / 5; /* Fourth column */
+            font-size: 12px;
+        }
+        
+        /* Re-style Weather Widget for Panel Integration */
+        #weather-widget {
+            position: static; /* No longer fixed position */
+            width: auto;
+            background: #111111; /* Darker panel background */
+            color: #fff;
+            padding: 10px;
+            border-radius: 0;
+            box-shadow: none;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        #weather-widget h3 { color: #ffff00; }
+        .weather-temp { font-size: 28px; }
+        .weather-icon { font-size: 30px; }
+        .weather-details label { color: #ccc; }
+        .weather-updated { font-size: 9px; }
+        
+        /* Placeholder for a new widget (e.g., Coronavirus Map) */
+        #chart-placeholder {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #0a0a0a;
+            height: 250px;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        /* --- 5. FOOTER (Bottom Ticker/Command Line Placeholder) --- */
+        footer {
+            grid-column: 1 / -1;
+            background-color: #111;
+            padding: 5px 15px;
+            font-size: 12px;
+            border-top: 1px solid #333;
+            position: sticky;
+            bottom: 0;
+        }
+        .command-line {
+            color: #ffff00;
+        }
+
+        /* Animation Keyframes (moved here for coherence) */
+        @keyframes scroll-left {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Hide speed controls as the aesthetic is now fixed */
+        .speed-controls { display: none; }
+        
+    </style>
+</head>
+<body>
+
+    <div class="terminal-grid">
+        
+        <header>
+            <h1>OAIJ <GO> to Open AI Jedi Dashboard (By Ordinary AI Jedi)</h1>
+            <div class="header-tabs">
+                <div>AI Demos</div>
+                <div class="active-tab">Fin-Tech News</div>
+                <div>My Creations | GITHUB</div>
+            </div>
+            <p style="color: #999; margin: 0;">Monday, 03 NOV 2025 7:53 AM SGT</p>
+        </header>
+
+        <div id="left-panel" class="panel">
+            <h2>AI Stock Movers & Key Watchlist | WOKE</h2>
+            <div class="placeholder-box">
+                **PLACEHOLDER: AI & TECH STOCK WATCHLIST**<br>
+                <span class="yellow">To be replaced with **live data feed** (e.g., top 10 $TSLA, $NVDA, $GOOGL changes).
+                This section tracks my personal bets in the AI economy.</span>
+            </div>
+            
+            <h2>AI Model Health Indicators | GM-MKT</h2>
+            <div class="placeholder-box">
+                **PLACEHOLDER: CORE AI METRICS**<br>
+                This space is reserved for mock **model performance metrics** (e.g., Latency, Error Rate, Compute Cost, VIX of AI Index).
+                This requires a custom JS script to generate realistic numbers.
+            </div>
+        </div>
+
+        <div id="center-panel" class="panel">
+            
+            <div class="tradingview-widget-container" style="flex-shrink: 0; margin-bottom: 10px;">
+              <div class="tradingview-widget-container__widget"></div>
+              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+              {
+              "symbols": [
+                { "proName": "NASDAQ:TSLA", "title": "Tesla" },
+                { "proName": "NASDAQ:AAPL", "title": "Apple" },
+                { "proName": "FX_IDC:EURUSD", "title": "EUR/USD" },
+                { "description": "Gold", "proName": "COMEX:GC1!" }
+              ],
+              "colorTheme": "dark",
+              "locale": "en",
+              "largeChartUrl": "",
+              "isTransparent": true,
+              "showSymbolLogo": true,
+              "displayMode": "adaptive"
+            }
+              </script>
+            </div>
+            <div id="rss-feed">
+                <h2>Latest Local News & Tech Updates</h2>
+                <div id="feed-content" class="loading">Loading news feed...</div>
+            </div>
+
+            <div style="flex-grow: 1; padding: 10px;">
+                <h2 style="color: #00ccff;">My Latest AI Creations & Project Updates | D-DEMO</h2>
+                <div class="placeholder-box" style="text-align: left;">
+                    **PLACEHOLDER: PROJECT DEMO LIST**<br>
+                    This area links directly to my **external AI Demos and GitHub repos**.
+                    <p style="color: #ff3333; margin-top: 5px; font-weight: bold;">[Project Alert: ALERT: Released new Generative AI Model v2.1 with 30% speed boost. (Link to GitHub)]</p>
+                    <p style="color: #fff;">[Project Update: Started work on a new Fin-Tech LLM for market analysis. Expected Q4.]</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="right-panel" class="panel">
+            
+            <div id="weather-widget">
+                <h3>🌡️ My Current Location (HK)</h3>
+                <div id="weather-content" class="weather-loading">Loading...</div>
+            </div>
+            
+            <div id="chart-placeholder">
+                <span style="color: #ffff00;"></span>
+                <p>Placeholder: My Algorithm's Performance Chart (Requires a **charting library**)</p>
+            </div>
+            
+            <h2 style="margin-top: 15px;">Key Technology Policy & Research | RSCH</h2>
+            <div class="placeholder-box" style="text-align: left;">
+                **PLACEHOLDER: RESEARCH & POLICY DIGEST**<br>
+                This space is reserved for a curated summary of **latest AI research papers** and **technology regulatory changes**.
+            </div>
+
+        </div>
+
+        <footer>
+            <span class="command-line">OAIJ <GO></span> [Enter Command/Project ID] | **F8/F9** for **NEXT/PREV** Page
+        </footer>
+
+    </div>
+    
+<script>
+    // Weather icon mapping
+    const weatherIcons = {
+        'Sunny': '☀️',
+        'Fine': '🌤️',
+        'Mainly Fine': '🌤️',
+        'Mainly Cloudy': '☁️',
+        'Cloudy': '☁️',
+        'Overcast': '☁️',
+        'Rain': '🌧️',
+        'Showers': '🌦️',
+        'Heavy Rain': '⛈️',
+        'Thunderstorms': '⛈️',
+        'Fog': '🌫️',
+        'Mist': '🌫️',
+        'Haze': '🌫️',
+        'Hot': '🌡️',
+        'Warm': '🌡️',
+        'Cool': '❄️',
+        'Cold': '🥶'
+    };
+    
+    // Function to get weather icon
+    function getWeatherIcon(description) {
+        for (let key in weatherIcons) {
+            if (description && description.includes(key)) {
+                return weatherIcons[key];
+            }
+        }
+        return '🌤️'; // Default icon
+    }
+    
+    // Function to fetch Hong Kong weather using wttr.in
+    async function loadWeather() {
+        try {
+            // Using wttr.in API - simple weather API with no API key needed
+            const apiUrl = 'https://wttr.in/Hong_Kong?format=j1';
+            
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            const weatherContent = document.getElementById('weather-content');
+            
+            if (!data || !data.current_condition) {
+                throw new Error('Invalid weather data');
+            }
+            
+            const current = data.current_condition[0];
+            const temp = current.temp_C;
+            const humidity = current.current.humidity;
+            const weatherDesc = current.weatherDesc[0].value;
+            const feelsLike = current.FeelsLikeC;
+            const uvIndex = current.uvIndex;
+            
+            let weatherIcon = '🌤️';
+            const desc = weatherDesc.toLowerCase();
+            if (desc.includes('sunny') || desc.includes('clear')) weatherIcon = '☀️';
+            else if (desc.includes('cloud')) weatherIcon = '☁️';
+            else if (desc.includes('rain') || desc.includes('drizzle')) weatherIcon = '🌧️';
+            else if (desc.includes('thunder') || desc.includes('storm')) weatherIcon = '⛈️';
+            else if (desc.includes('snow')) weatherIcon = '❄️';
+            else if (desc.includes('fog') || desc.includes('mist')) weatherIcon = '🌫️';
+            else if (desc.includes('overcast')) weatherIcon = '☁️';
+            
+            weatherContent.innerHTML = `
+                <div class="weather-main">
+                    <div class="weather-temp">${temp}°C</div>
+                    <div class="weather-icon">${weatherIcon}</div>
+                </div>
+                <div class="weather-details">
+                    <div>
+                        <label>Feels Like:</label>
+                        <span>${feelsLike}°C</span>
+                    </div>
+                    <div>
+                        <label>Humidity:</label>
+                        <span>${humidity}%</span>
+                    </div>
+                    <div>
+                        <label>UV Index:</label>
+                        <span>${uvIndex}</span>
+                    </div>
+                    <div>
+                        <label>Condition:</label>
+                        <span>${weatherDesc}</span>
+                    </div>
+                </div>
+                <div class="weather-updated">
+                    Updated: ${new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+            `;
+            
+        } catch (error) {
+            console.error('Error loading weather:', error);
+            document.getElementById('weather-content').innerHTML = 
+                `<div style="font-size: 11px; line-height: 1.5; color: #999;">
+                    Weather data unavailable.<br>
+                    <a href="https://www.hko.gov.hk/en/index.html" target="_blank" style="color: #00ccff; text-decoration: underline;">
+                        Visit HK Obs.
+                    </a>
+                </div>`;
+        }
+    }
+    
+    // Speed settings (in seconds)
+    const speeds = {
+        slow: 180,
+        medium: 120,
+        fast: 60
+    };
+    
+    let currentSpeed = 'medium';
+    
+    // Function to set scroll speed (still exists, but buttons are hidden)
+    function setSpeed(speed) {
+        currentSpeed = speed;
+        const feedContent = document.getElementById('feed-content');
+        const duration = speeds[speed];
+        feedContent.style.animationDuration = duration + 's';
+    }
+    
+    // Function to fetch and parse RSS feed
+    async function loadRSSFeed() {
+        // Correct English feed URL for horizontal display
+        const feedUrl = 'https://rthk.hk/rthk/news/rss/e_expressnews_elocal.xml'; 
+        
+        try {
+            let response;
+            try {
+                // Try direct fetch first
+                response = await fetch(feedUrl);
+            } catch (error) {
+                // If direct fetch fails, try with CORS proxy
+                const proxyUrl = 'https://corsproxy.io/?';
+                response = await fetch(proxyUrl + encodeURIComponent(feedUrl));
+            }
+            
+            const text = await response.text();
+            
+            // Parse XML
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(text, 'text/xml');
+            
+            const parserError = xmlDoc.querySelector('parsererror');
+            if (parserError) {
+                throw new Error('Error parsing RSS feed');
+            }
+            
+            const items = xmlDoc.querySelectorAll('item');
+            const feedContent = document.getElementById('feed-content');
+            
+            if (items.length === 0) {
+                feedContent.innerHTML = '<span>No news items found.</span>';
+                return;
+            }
+            
+            feedContent.innerHTML = '';
+            feedContent.classList.remove('loading');
+            
+            let tickerHTML = '';
+            const maxItems = Math.min(items.length, 15);
+            
+            for (let i = 0; i < maxItems; i++) {
+                const item = items[i];
+                
+                const title = item.querySelector('title')?.textContent || 'No title';
+                const link = item.querySelector('link')?.textContent || '#';
+                const pubDate = item.querySelector('pubDate')?.textContent || '';
+                
+                let formattedDate = '';
+                if (pubDate) {
+                    const date = new Date(pubDate);
+                    formattedDate = date.toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                }
+                
+                tickerHTML += `
+                    <span class="news-item">
+                        <span class="news-title">
+                            <a href="${link}" target="_blank" rel="noopener noreferrer">${title}</a>
+                        </span>
+                        ${formattedDate ? `<span class="news-date" style="color:#555; margin-left: 5px;">(${formattedDate})</span>` : ''}
+                    </span>
+                    <span class="news-separator">★</span>
+                `;
+            }
+            
+            // Duplicate content for seamless loop
+            feedContent.innerHTML = tickerHTML + tickerHTML;
+            
+            // Set animation duration
+            feedContent.style.animationDuration = '60s'; // Fixed fast speed
+            
+        } catch (error) {
+            console.error('Error loading RSS feed:', error);
+            document.getElementById('feed-content').innerHTML = 
+                '<span class="error" style="color: #ff3333;">Unable to load news feed</span>';
+            document.getElementById('feed-content').classList.remove('loading');
+        }
+    }
+    
+    // Load data when page loads
+    window.addEventListener('DOMContentLoaded', function() {
+        loadWeather();
+        loadRSSFeed();
+    });
+    
+    // Refresh weather every 10 minutes
+    setInterval(loadWeather, 10 * 60 * 1000);
+    
+    // Refresh RSS feed every 5 minutes
+    setInterval(loadRSSFeed, 5 * 60 * 1000);
+</script>
+
+</body>
+</html>
